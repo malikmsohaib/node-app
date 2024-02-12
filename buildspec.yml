@@ -1,15 +1,14 @@
 version: 0.2
-
-
+env:
+  variables:
+    AWS_ACCOUNT_ID: 289222008732
+    IMAGE_REPO_NAME: node-app
+    BRANCH_NAME: master
 phases:
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
-      - aws --version
-      - aws ecr get-login-password --region us-east-1
-      - REPOSITORY_URI=289222008732.dkr.ecr.us-east-1.amazonaws.com/node-app:latest
-      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - IMAGE_TAG=build-$(echo $CODEBUILD_BUILD_ID | awk -F":" '{print $2}')
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
   build:
     commands:
       - echo Build started on `date`
@@ -22,7 +21,6 @@ phases:
       - echo Pushing the Docker image...
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$BRANCH_NAME.$CODEBUILD_RESOLVED_SOURCE_VERSION
       - echo Writing image definitions file...
-      - printf '[{"name":"node-app","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
-      - cat imagedefinitions.json 
+      - printf '[{"name":"node-app","imageUri":"%s"}]' $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$BRANCH_NAME.$CODEBUILD_RESOLVED_SOURCE_VERSION > imagedefinitions.json
 artifacts:
-    files: imagedefinitions.json
+  files: imagedefinitions.json
